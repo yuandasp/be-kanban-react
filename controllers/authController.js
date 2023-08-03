@@ -6,8 +6,6 @@ const nodemailer = require("../helpers/nodemailer");
 
 module.exports = {
   register: async (req, res) => {
-    console.log("aaa", req);
-    console.log("bbb", req.body);
     try {
       const { username, email, password } = req.body;
 
@@ -94,6 +92,8 @@ module.exports = {
 
       const payload = {
         id: isEmailExist[0].id_user,
+        email: isEmailExist[0].email,
+        username: isEmailExist[0].username,
         type: "user",
       };
 
