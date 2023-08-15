@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 const nodemailer = require("../helpers/nodemailer");
+const { OAuth2Client } = require("google-auth-library");
 
 module.exports = {
   register: async (req, res) => {
@@ -29,7 +30,7 @@ module.exports = {
 
       const addUserQuery = `INSERT INTO user VALUES (null, ${db.escape(
         username
-      )}, ${db.escape(email)}, ${db.escape(hashPassword)}, false, null)`;
+      )}, ${db.escape(email)}, ${db.escape(hashPassword)}, false, null, null)`;
 
       const user = await query(addUserQuery);
 
@@ -79,6 +80,12 @@ module.exports = {
           .send({ message: "Please verified your account!" });
       }
 
+      if (isEmailExist[0].register_type === "Google") {
+        return res
+          .status(400)
+          .send({ message: "Please login using Google Sign In" });
+      }
+
       const isPasswordValid = await bcrypt.compare(
         password,
         isEmailExist[0].password
@@ -104,7 +111,7 @@ module.exports = {
         token,
         user: {
           idUser: isEmailExist[0].id_user,
-          name: isEmailExist[0].name,
+          username: isEmailExist[0].username,
           email: isEmailExist[0].email,
         },
       });
@@ -227,6 +234,82 @@ module.exports = {
         .send({ message: "Change password success! Please log in again" });
     } catch (error) {
       return res.status(200).send({ message: error });
+    }
+  },
+  verifyGoogleSignIn: async (req, res) => {
+    try {
+      const token = req.headers.token;
+      const client = new OAuth2Client();
+
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      const userid = payload["sub"];
+
+      const isEmailExist = await query(
+        `SELECT * FROM user WHERE email=${db.escape(payload.email)}`
+      );
+
+      if (isEmailExist.length > 0) {
+        if (isEmailExist[0].register_type !== "Google") {
+          return res.status(400).send({
+            message:
+              "Your account already registered with email, please input valid email and password in the form",
+          });
+        }
+
+        const payloadJwt = {
+          id: isEmailExist[0].id_user,
+          email: isEmailExist[0].email,
+          username: isEmailExist[0].username,
+          type: "user",
+        };
+
+        const tokenJwt = jwt.sign(payloadJwt, process.env.JWT_KEY);
+
+        return res.status(200).send({
+          message: "Login success!",
+          token: tokenJwt,
+          user: {
+            idUser: isEmailExist[0].id_user,
+            username: isEmailExist[0].username,
+            email: isEmailExist[0].email,
+          },
+        });
+      } else {
+        const username = payload.given_name;
+        const email = payload.email;
+        const registerType = "Google";
+
+        const addUserQuery = await query(
+          `INSERT INTO user VALUES (null, ${db.escape(username)}, ${db.escape(
+            email
+          )}, null, true, null, ${db.escape(registerType)});`
+        );
+
+        const payloadJwt = {
+          id: addUserQuery.insertId,
+          email,
+          username,
+          type: "user",
+        };
+
+        const tokenJwt = jwt.sign(payloadJwt, process.env.JWT_KEY);
+
+        return res.status(200).send({
+          message: "Login success!",
+          token: tokenJwt,
+          user: {
+            idUser: addUserQuery.insertId,
+            username,
+            email,
+          },
+        });
+      }
+    } catch (error) {
+      return res.status(500).send({ message: error });
     }
   },
 };

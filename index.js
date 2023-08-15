@@ -27,11 +27,9 @@ app.use(
 app.use(express.json());
 
 cron.schedule(
-  "0 7 * * *",
+  "0 11 * * *",
   async () => {
     try {
-      console.log("this function is test");
-
       const users = await query(`SELECT * FROM user;`);
 
       users.forEach(async (user) => {
@@ -69,7 +67,7 @@ cron.schedule(
         }
       });
     } catch (error) {
-      console.log(error);
+      error;
     }
   },
   {
