@@ -47,7 +47,9 @@ module.exports = {
           title
         )}, ${db.escape(
           description
-        )},${idStatus}, ${idPriority}, LOCALTIMESTAMP(${startDate}, LOCALTIMESTAMP(${endDate}), false)`
+        )},${idStatus}, ${idPriority}, LOCALTIMESTAMP(${db.escape(
+          startDate
+        )}), LOCALTIMESTAMP(${db.escape(endDate)}), false)`
       );
 
       return res
@@ -82,10 +84,10 @@ module.exports = {
         updateQuery += `idpriority=${idPriority},`;
       }
       if (startDate) {
-        updateQuery += `start_date=LOCALTIMESTAMP(${startDate}),`;
+        updateQuery += `start_date=LOCALTIMESTAMP(${db.escape(startDate)}),`;
       }
       if (endDate) {
-        updateQuery += `end_date=LOCALTIMESTAMP(${endDate}),`;
+        updateQuery += `end_date=LOCALTIMESTAMP(${db.escape(endDate)}),`;
       }
 
       updateQuery =
