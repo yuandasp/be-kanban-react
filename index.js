@@ -34,7 +34,7 @@ cron.schedule(
 
       users.forEach(async (user) => {
         const todos = await query(
-          `SELECT * FROM todo WHERE is_notif_sent=false and end_date = curdate() and idstatus < 3 and iduser=${user.id_user};`
+          `SELECT * FROM todo WHERE is_notif_sent=false and end_date >= curdate() and idstatus < 3 and iduser=${user.id_user};`
         );
 
         if (todos.length > 0) {

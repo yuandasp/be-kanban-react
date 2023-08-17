@@ -45,9 +45,9 @@ module.exports = {
       const addTodo = await query(
         `INSERT INTO todo (idtodo, iduser, title, description, idstatus, idpriority, start_date, end_date, is_notif_sent) VALUES (null, ${idUser}, ${db.escape(
           title
-        )}, ${db.escape(description)},${idStatus}, ${idPriority}, ${db.escape(
-          startDate
-        )}, ${db.escape(endDate)}, false)`
+        )}, ${db.escape(
+          description
+        )},${idStatus}, ${idPriority}, LOCALTIMESTAMP(${startDate}, LOCALTIMESTAMP(${endDate}), false)`
       );
 
       return res
@@ -82,10 +82,10 @@ module.exports = {
         updateQuery += `idpriority=${idPriority},`;
       }
       if (startDate) {
-        updateQuery += `start_date=${db.escape(startDate)},`;
+        updateQuery += `start_date=LOCALTIMESTAMP(${startDate}),`;
       }
       if (endDate) {
-        updateQuery += `end_date=${db.escape(endDate)},`;
+        updateQuery += `end_date=LOCALTIMESTAMP(${endDate}),`;
       }
 
       updateQuery =
